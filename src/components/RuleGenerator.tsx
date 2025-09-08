@@ -96,11 +96,11 @@ export default function RuleGenerator() {
         const conditionsXml = conditions.map(c => {
             let attrsString = '';
             for (const [key, val] of Object.entries(c.attributes)) {
-                if (val) attrsString += ` ${key}="${val}"`;
+                // Renomeia 'name' para 'field' especificamente para a tag <list>
+                const attrKey = c.tag === 'list' && key === 'name' ? 'field' : key;
+                if (val) attrsString += ` ${attrKey}="${val}"`;
             }
         
-            // ### ALTERAÇÃO 1: LÓGICA DE GERAÇÃO ###
-            // As tags 'match' e 'regex' foram removidas desta lista para que seus atributos possam ser adicionados.
             if (['description', 'group', 'if_sid', 'if_group', 'decoded_as', 'category'].includes(c.tag)) {
                  return `    <${c.tag}>${c.value}</${c.tag}>`;
             }
@@ -138,7 +138,7 @@ export default function RuleGenerator() {
                                     <Tooltip>
                                         <TooltipTrigger asChild><HelpCircle className="w-4 h-4 ml-1.5 text-muted-foreground cursor-pointer" /></TooltipTrigger>
                                         <TooltipContent>
-                                            <p>Define a contagem de eventos para correlação. [cite: 103]</p>
+                                            <p>Define a contagem de eventos para correlação.</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </Label>
@@ -166,26 +166,29 @@ export default function RuleGenerator() {
                                                 </SelectContent>
                                             </Select>
                                             <div className="sm:col-span-2">
-                                                <Input placeholder="Valor da tag" value={condition.value} onChange={e => updateCondition(condition.id, { value: e.target.value })} />
+                                                <Input 
+                                                    placeholder={condition.tag === 'list' ? "Caminho da lista (ex: etc/lists/nome-lista)" : "Valor da tag"} 
+                                                    value={condition.value} 
+                                                    onChange={e => updateCondition(condition.id, { value: e.target.value })} 
+                                                />
                                             </div>
                                         </div>
                                         <Button variant="ghost" size="icon" onClick={() => removeCondition(condition.id)}>
                                             <X className="w-4 h-4" />
                                         </Button>
                                     </div>
-                                    
-                                    {/* ### ALTERAÇÃO 2: RENDERIZAÇÃO DOS ATRIBUTOS ### */}
-                                    {/* Este bloco agora inclui a lógica para 'match' e 'regex' */}
+
                                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pl-1 pt-2">
                                         {condition.tag === 'field' && (
                                             <div className="space-y-2">
-                                                <Label htmlFor={`attr-name-${condition.id}`}>Atributo 'name'</Label>
+                                                <Label htmlFor={`attr-name-${condition.id}`}>Atributo &apos;name&apos;</Label>
                                                 <Input id={`attr-name-${condition.id}`} placeholder="ex: win.eventdata.targetUserName" value={condition.attributes.name || ''} onChange={e => updateConditionAttribute(condition.id, 'name', e.target.value)} />
                                             </div>
                                         )}
+
                                         {['srcip', 'dstip', 'user', 'hostname'].includes(condition.tag) && (
                                             <div className="space-y-2">
-                                                <Label htmlFor={`attr-negate-${condition.id}`}>Atributo 'negate'</Label>
+                                                <Label htmlFor={`attr-negate-${condition.id}`}>Atributo &apos;negate&apos;</Label>
                                                 <Select value={condition.attributes.negate || 'no'} onValueChange={(value: 'yes' | 'no') => updateConditionAttribute(condition.id, 'negate', value)}>
                                                     <SelectTrigger id={`attr-negate-${condition.id}`}><SelectValue /></SelectTrigger>
                                                     <SelectContent>
@@ -195,10 +198,11 @@ export default function RuleGenerator() {
                                                 </Select>
                                             </div>
                                         )}
+                                        
                                         {['match', 'regex'].includes(condition.tag) && (
                                             <>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor={`attr-type-${condition.id}`}>Atributo 'type'</Label>
+                                                    <Label htmlFor={`attr-type-${condition.id}`}>Atributo &apos;type&apos;</Label>
                                                     <Select value={condition.attributes.type || 'osmatch'} onValueChange={(value: 'osmatch' | 'sregex' | 'pcre2') => updateConditionAttribute(condition.id, 'type', value)}>
                                                         <SelectTrigger id={`attr-type-${condition.id}`}><SelectValue /></SelectTrigger>
                                                         <SelectContent>
@@ -209,7 +213,7 @@ export default function RuleGenerator() {
                                                     </Select>
                                                 </div>
                                                 <div className="space-y-2">
-                                                    <Label htmlFor={`attr-negate-${condition.id}`}>Atributo 'negate'</Label>
+                                                    <Label htmlFor={`attr-negate-${condition.id}`}>Atributo &apos;negate&apos;</Label>
                                                     <Select value={condition.attributes.negate || 'no'} onValueChange={(value: 'yes' | 'no') => updateConditionAttribute(condition.id, 'negate', value)}>
                                                         <SelectTrigger id={`attr-negate-${condition.id}`}><SelectValue /></SelectTrigger>
                                                         <SelectContent>
@@ -219,6 +223,13 @@ export default function RuleGenerator() {
                                                     </Select>
                                                 </div>
                                             </>
+                                        )}
+
+                                        {condition.tag === 'list' && (
+                                            <div className="space-y-2">
+                                                <Label htmlFor={`attr-name-${condition.id}`}>Campo a ser verificado (field)</Label>
+                                                <Input id={`attr-name-${condition.id}`} placeholder="ex: srcip, user" value={condition.attributes.name || ''} onChange={e => updateConditionAttribute(condition.id, 'name', e.target.value)} />
+                                            </div>
                                         )}
                                     </div>
                                 </div>
