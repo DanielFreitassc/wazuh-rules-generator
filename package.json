@@ -1,4 +1,5 @@
 {
+  
   "name": "wazuh-rules-generator",
   "version": "0.1.0",
   "private": true,
